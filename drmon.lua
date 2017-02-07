@@ -13,9 +13,12 @@ local activateOnCharged = 1
 os.loadAPI("lib/f")
 
 local version = "0.25"
+local modifiedVersion = "0.03"
 -- toggleable via the monitor, use our algorithm to achieve our target field strength or let the user tweak it
 local autoInputGate = 1
+local autoOutputGate = 0
 local curInputGate = 222000
+local cFlow = 222000
 
 -- monitor 
 local mon, monitor, monX, monY
@@ -62,8 +65,11 @@ mon.monitor,mon.X, mon.Y = monitor, monX, monY
 function save_config()
   sw = fs.open("config.txt", "w")   
   sw.writeLine(version)
+  sw.writeLine(modifiedVersion)
   sw.writeLine(autoInputGate)
   sw.writeLine(curInputGate)
+  sw.writeLine(autoOutputGate)
+  sw.writeLine(cFlow)
   sw.close()
 end
 
@@ -71,8 +77,11 @@ end
 function load_config()
   sr = fs.open("config.txt", "r")
   version = sr.readLine()
+  modifiedVersion = sr.readLine()
   autoInputGate = tonumber(sr.readLine())
   curInputGate = tonumber(sr.readLine())
+  autoOutputGate = tonumber(sr.readLine())
+  cFlow = tonumber(sr.readLine())
   sr.close()
 end
 
@@ -93,8 +102,7 @@ function buttons()
     -- output gate controls
     -- 2-4 = -1000, 6-9 = -10000, 10-12,8 = -100000
     -- 17-19 = +1000, 21-23 = +10000, 25-27 = +100000
-    if yPos == 8 then
-      local cFlow = fluxgate.getSignalLowFlow()
+    if yPos == 8 and autoOutputGate == 0 and xPos ~= 14 and xPos ~= 15 then
       if xPos >= 2 and xPos <= 4 then
         cFlow = cFlow-1000
       elseif xPos >= 6 and xPos <= 9 then
@@ -109,6 +117,7 @@ function buttons()
         cFlow = cFlow+1000
       end
       fluxgate.setSignalLowFlow(cFlow)
+	  save_config()
     end
 
     -- input gate controls
@@ -131,7 +140,17 @@ function buttons()
       inputfluxgate.setSignalLowFlow(curInputGate)
       save_config()
     end
-
+	
+	-- output gate toggle
+	if yPos == 8 and ( xPos == 14 or xPos == 15) then
+	  if autoOutputGate == 1 then
+	    autoOutputGate = 0
+	  else
+	    autoOutputGate = 1
+	  end
+	  save_config()
+	end
+	
     -- input gate toggle
     if yPos == 10 and ( xPos == 14 or xPos == 15) then
       if autoInputGate == 1 then
@@ -141,7 +160,6 @@ function buttons()
       end
       save_config()
     end
-
   end
 end
 
@@ -205,8 +223,13 @@ function update()
     f.draw_text_lr(mon, 2, 7, 1, "Output Gate", f.format_int(fluxgate.getSignalLowFlow()) .. " rf/t", colors.white, colors.blue, colors.black)
 
     -- buttons
-    drawButtons(8)
-
+	if autoOutputGate == 1 then
+	  f.draw_text(mon, 14, 8, "AU", colors.white, colors.gray)
+	else
+	  f.draw_text(mon, 14, 8, "MA", colors.white, colors.gray)
+	  drawButtons(8)
+	end
+	
     f.draw_text_lr(mon, 2, 9, 1, "Input Gate", f.format_int(inputfluxgate.getSignalLowFlow()) .. " rf/t", colors.white, colors.blue, colors.black)
 
     if autoInputGate == 1 then
@@ -215,6 +238,8 @@ function update()
       f.draw_text(mon, 14, 10, "MA", colors.white, colors.gray)
       drawButtons(10)
     end
+	
+
 
     local satPercent
     satPercent = math.ceil(ri.energySaturation / ri.maxEnergySaturation * 10000)*.01
@@ -235,7 +260,7 @@ function update()
       f.draw_text_lr(mon, 2, 14, 1, "Field Strength", fieldPercent .. "%", colors.white, fieldColor, colors.black)
     end
     f.progress_bar(mon, 2, 15, mon.X-2, fieldPercent, 100, fieldColor, colors.gray)
-
+	
     local fuelPercent, fuelColor
 
     fuelPercent = 100 - math.ceil(ri.fuelConversion / ri.maxFuelConversion * 10000)*.01
@@ -283,11 +308,20 @@ function update()
       else
         inputfluxgate.setSignalLowFlow(curInputGate)
       end
+	  if autoOutputGate == 1 then
+	    fluxout = ri.generationRate-100
+	    fluxgate.setSignalLowFlow(fluxout)
+	  else
+	    fluxgate.setSignalLowFlow(cFlow)
+	  end
     end
 
     -- safeguards
     --
-    
+    if cFlow >= (ri.generationRate+1000) then
+	  reactor.stopReactor()
+	  action = "Output Rate Problem!"
+	end
     -- out of fuel, kill it
     if fuelPercent <= 10 then
       reactor.stopReactor()
@@ -314,4 +348,3 @@ function update()
 end
 
 parallel.waitForAny(buttons, update)
-
