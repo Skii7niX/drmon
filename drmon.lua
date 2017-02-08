@@ -13,7 +13,7 @@ local activateOnCharged = 1
 os.loadAPI("lib/f")
 
 local version = "0.25"
-local modifiedVersion = "0.03"
+local modifiedVersion = "0.04"
 -- toggleable via the monitor, use our algorithm to achieve our target field strength or let the user tweak it
 local autoInputGate = 1
 local autoOutputGate = 0
@@ -318,10 +318,12 @@ function update()
 
     -- safeguards
     --
-    if cFlow >= (ri.generationRate+1000) then
+    if autoOutputGate == 1 then
+      if cFlow >= (ri.generationRate+1000) then
 	  reactor.stopReactor()
 	  action = "Output Rate Problem!"
-	end
+      end
+    end
     -- out of fuel, kill it
     if fuelPercent <= 10 then
       reactor.stopReactor()
