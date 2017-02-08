@@ -320,9 +320,10 @@ function update()
     -- safeguards
     --
     if autoOutputGate == 1 then
-      if cFlow >= (ri.generationRate+1000) then
+      sleep(0.1)
+      if cFlow >= (ri.generationRate+10000) then
 	  reactor.stopReactor()
-	  action = "Output Rate Problem!"
+	  action = "Output Rate Problem"
       end
     end
     -- out of fuel, kill it
