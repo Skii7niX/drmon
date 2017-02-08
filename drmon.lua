@@ -13,7 +13,7 @@ local activateOnCharged = 1
 os.loadAPI("lib/f")
 
 local version = "0.25"
-local modifiedVersion = "0.04"
+local modifiedVersion = "0.05"
 -- toggleable via the monitor, use our algorithm to achieve our target field strength or let the user tweak it
 local autoInputGate = 1
 local autoOutputGate = 0
@@ -147,6 +147,7 @@ function buttons()
 	    autoOutputGate = 0
 	  else
 	    autoOutputGate = 1
+	    cFlow = ri.generationRate-1000
 	  end
 	  save_config()
 	end
