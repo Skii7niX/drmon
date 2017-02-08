@@ -147,7 +147,7 @@ function buttons()
 	    autoOutputGate = 0
 	  else
 	    autoOutputGate = 1
-	    cFlow = ri.generationRate-1000
+	    cFlow = ri.generationRate+1000
 	  end
 	  save_config()
 	end
