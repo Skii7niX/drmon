@@ -13,7 +13,7 @@ local activateOnCharged = 1
 os.loadAPI("lib/f")
 
 local version = "0.25"
-local modifiedVersion = "0.07"
+local modifiedVersion = "0.08"
 -- toggleable via the monitor, use our algorithm to achieve our target field strength or let the user tweak it
 local autoInputGate = 1
 local autoOutputGate = 0
@@ -309,7 +309,11 @@ function update()
         inputfluxgate.setSignalLowFlow(curInputGate)
       end
 	  if autoOutputGate == 1 then
+	    if ri.temperature <= 7000 then
 	    fluxout = ri.generationRate+100
+	    else
+	    fluxout = ri.generationRate
+	    end
 	    fluxgate.setSignalLowFlow(fluxout)
 	  else
 	    fluxgate.setSignalLowFlow(cFlow)
