@@ -147,7 +147,6 @@ function buttons()
 	    autoOutputGate = 0
 	  else
 	    autoOutputGate = 1
-	    cFlow = (ri.generationRate + 1000)
 	  end
 	  save_config()
 	end
@@ -310,7 +309,7 @@ function update()
         inputfluxgate.setSignalLowFlow(curInputGate)
       end
 	  if autoOutputGate == 1 then
-	    fluxout = ri.generationRate-100
+	    fluxout = ri.generationRate+100
 	    fluxgate.setSignalLowFlow(fluxout)
 	  else
 	    fluxgate.setSignalLowFlow(cFlow)
